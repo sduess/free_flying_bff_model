@@ -186,6 +186,55 @@ class BFF_Structure:
 
         self.structural_twist = np.zeros((self.n_elem, self.n_node_elem))
 
+    def calculate_aircraft_mass(self):
+        # get structural mass for each component (beam ID)
+        list_elem_mass = []
+        center_of_gravity = np.zeros((3, ))
+        for i_elem in range(self.n_elem):
+            start_node = self.conn[i_elem, 0]
+            end_node = self.conn[i_elem, 1]
+            # calculate length assuming that elem is straight (unloaded)
+            length_elem = np.sqrt((self.x[start_node]-self.x[end_node])**2 
+                                  + (self.y[start_node]-self.y[end_node])**2 
+                                  +(self.z[start_node]-self.z[end_node])**2 )
+            distance = [self.x[self.conn[i_elem, -1]],
+                        self.y[self.conn[i_elem, -1]],
+                        self.z[self.conn[i_elem, -1]]]
+            distributed_mass_elem = self.mass[self.elem_mass[i_elem], 0, 0]
+            mass_elem = distributed_mass_elem * length_elem
+            list_elem_mass.append(mass_elem)
+            
+            for i_dim in range(3):
+                center_of_gravity[i_dim] += mass_elem * distance[i_dim]
+        total_mass_structure = sum(list_elem_mass)
+        
+        print("Total structural mass = ", total_mass_structure)
+        for i_beam in set(self.beam_number):
+            structural_mass_beam = sum(np.array(list_elem_mass)[self.beam_number == int(i_beam)])
+            print("Total structural mass for beam {} is {} kg".format(i_beam, structural_mass_beam))
+        
+        # Get lumped masses
+        n_lumped_masses_wing = len(self.lumped_mass)
+        for i_mass in range(n_lumped_masses_wing):      
+            position_B_frame = self.lumped_mass_position[i_mass, :]
+            position_G_frame = np.zeros_like(position_B_frame)
+            position_G_frame[0] = -position_B_frame[1]
+            position_G_frame[1] = position_B_frame[0]
+            position_G_frame[2] = position_B_frame[2]
+                
+            if self.lumped_mass[i_mass] > 0:
+                center_of_gravity[0] +=  self.lumped_mass[i_mass] * (position_G_frame[0] + self.x[self.lumped_mass_nodes[i_mass]])
+                center_of_gravity[1] +=  self.lumped_mass[i_mass] * (position_G_frame[1] + self.y[self.lumped_mass_nodes[i_mass]])
+                center_of_gravity[2] +=  self.lumped_mass[i_mass] * (position_G_frame[2] + self.z[self.lumped_mass_nodes[i_mass]])
+
+        total_mass_lumped_masses = sum(self.lumped_mass)
+        total_mass = total_mass_lumped_masses + total_mass_structure
+        center_of_gravity /= total_mass
+   
+        print("Total lumped masses ", total_mass_lumped_masses)
+        print("Total mass aircraft = ", total_mass)
+        print("Center of Gravity = ", center_of_gravity)
+
     def mirror_beam(self):
         """
             Mirrors the parameters from the beam representing the right free-flying wing
