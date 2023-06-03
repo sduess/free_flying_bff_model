@@ -1,17 +1,11 @@
-import h5py as h5
 import configobj
 from bff_structure import BFF_Structure
 from bff_aero import BFF_Aero
 import os
 import sharpy.sharpy_main
 
-import sharpy.utils.algebra as algebra
-import numpy as np
 
-FLEXOP_DIRECTORY = os.path.dirname(os.path.realpath(__file__)) + '/'
-
-
-class BFF_Flying_wing:
+class BFF_Flying_Wing:
 
     def __init__(self, case_name, case_route, output_route):
         self.case_name = case_name
@@ -23,11 +17,10 @@ class BFF_Flying_wing:
 
         self.settings = None
 
-    def init_aeroelastic(self,**kwargs):
-        m = kwargs.get('m', 4)
+    def init_aeroelastic(self, **kwargs):
         self.clean()
         self.init_structure()
-        self.init_aero(m=m, **kwargs)
+        self.init_aero(**kwargs)
 
     def init_structure(self, **kwargs):
         self.structure = BFF_Structure(self.case_name, self.case_route, **kwargs)
