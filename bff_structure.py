@@ -44,6 +44,8 @@ class BFF_Structure:
         self.x_nose = -(self.chord_wing / 2. + self.offset_nose_wing_start_LE)
         self.set_sweep_angles()
 
+        self.thrust = 0.
+
     def generate(self):
         """
             Function to set up all necessary parameter inputs to define the geometry and discretisation
@@ -197,6 +199,8 @@ class BFF_Structure:
         self.conn[self.n_elem_right:, :] = self.conn[:self.n_elem_right, :] + self.n_node_right - 1
         self.conn[self.n_elem_right, 0] = 0 
 
+    def set_thrust(self, value):
+        self.thrust = value
 
     def write_input_file(self):
         """
