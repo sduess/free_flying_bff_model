@@ -100,11 +100,16 @@ class BFF_Structure:
         delta_x_quarter_body_LE = self.offset_nose_wing_start_LE - self.offset_nose_quarter_body_LE 
         self.sweep_quarter_body_LE = np.arctan(delta_x_quarter_body_LE / (self.halfspan_body/2))
 
-
     def set_lumped_masses(self):
-        # TODO: Read lumped masses from csv file?
-        pass 
-
+        # TODO: add accelerometer lumped masses
+        n_lumped_mass = 1
+        self.lumped_mass_nodes = np.zeros((n_lumped_mass, ), dtype=int)
+        self.lumped_mass = np.zeros((n_lumped_mass, ))
+        self.lumped_mass_inertia = np.zeros((n_lumped_mass, 3, 3))
+        self.lumped_mass_position = np.zeros((n_lumped_mass, 3))
+        # lumped mass to get mass properties of wing
+        self.lumped_mass[0] = 0.16 - 0.07235312427332974
+        self.lumped_mass_position[0, 1] = 0.053474066
 
     def set_beam_coordinate_nodes(self):        
         """
@@ -223,3 +228,7 @@ class BFF_Structure:
 
             h5file.create_dataset('structural_twist', data=self.structural_twist)
             h5file.create_dataset('app_forces', data=self.app_forces)
+            h5file.create_dataset('lumped_mass_nodes', data=self.lumped_mass_nodes)
+            h5file.create_dataset('lumped_mass', data=self.lumped_mass)
+            h5file.create_dataset('lumped_mass_inertia', data=self.lumped_mass_inertia)
+            h5file.create_dataset('lumped_mass_position', data=self.lumped_mass_position)
