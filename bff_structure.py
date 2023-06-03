@@ -125,37 +125,40 @@ class BFF_Structure:
         self.x[self.n_node_body:self.n_node_body + self.n_node_wing] = (self.y[self.n_node_body:self.n_node_body + self.n_node_wing]-self.halfspan_body) * np.tan(self.sweep_wing)
         
     def set_stiffness_and_mass_propoerties(self):
-        """
-            Defines the stiffness and mass properties of the different beam sections.
-        """     
-        # TODO: get correct stiffness and mass properties, using the values from Hale for now 
-        ea = 1e7
-        ga = 1e5
-        gj = 1e4
-        eiy = 2e4
-        eiz = 4e6
-        m_bar_main = 0.75
-        j_bar_main = 0.075
-        base_stiffness = self.sigma * np.diag([ea, ga, ga, gj, eiy, eiz])
-        base_mass = np.diag([m_bar_main, m_bar_main, m_bar_main, j_bar_main, 0.5 * j_bar_main, 0.5 * j_bar_main])
+        
         n_material = 3 # body + wing right + wing left
         self.stiffness = np.zeros((n_material, 6, 6))
         self.mass = np.zeros((n_material, 6, 6))
         self.elem_stiffness = np.zeros((self.n_elem, ), dtype=int)
         self.mass = np.zeros((n_material, 6, 6))
         self.elem_mass = np.zeros((self.n_elem, ), dtype=int)
+        
+        # TODO: add inertia to (mass???)
+        ea = 1e7
+        ga = 1e5 
+        gj = 1e4
+        eiy = 1e4 
+        eiz = eiy
+        # gj = 0.06 # Torsional stiffness
+        # ga = gj * 20 # Shear stiffness in the local y axis
+        # eiy = 0.18 # Bending stiffness around the flapwise direction
+        # eiz = 0.18 # Bending stiffness around the edgewise direction
+        # ea = eiy * 1e4 # Axial stiffness
+        m_bar_main = 0.069 
+        j_bar_main = m_bar_main / 10.
+        base_stiffness = self.sigma * np.diag([ea, ga, ga, gj, eiy, eiz]) / 1e4
+        base_mass = np.diag([m_bar_main, m_bar_main, m_bar_main, j_bar_main, 0.5 * j_bar_main, 0.5 * j_bar_main])
+
+        sigma_main_body = 100
 
         # Stiffness and mass properties
-        self.stiffness[0, ...] = self.sigma * base_stiffness * 100
-        self.stiffness[1:, ...] = self.sigma * base_stiffness
+        self.stiffness[0, ...] = base_stiffness * sigma_main_body
+        self.stiffness[1, ...] = base_stiffness
+        self.stiffness[2, ...] = base_stiffness
 
         self.mass[:, ...] =  base_mass
-            
-    def load_stiffness_and_mass_matrix(self):
-        # TODO: define stiffness and mass matrices and load from csv file?
-        pass
 
-    def set_beam_properties(self):    
+    def set_beam_properties(self):
         """
             Defines all necessary parameters to define the beam including node coordinate,
             elements with their associated nodes, frame of reference delta, boundary conditions
@@ -190,15 +193,12 @@ class BFF_Structure:
         """
         self.x[self.n_node_right:]  = self.x[1:self.n_node_right]
         self.y[self.n_node_right:]  = - self.y[1:self.n_node_right]
-
         self.frame_of_reference_delta[self.n_elem_right:, :, :] = self.frame_of_reference_delta[:self.n_elem_right, :, :] * (-1)
-        # body section
         self.elem_stiffness[self.n_elem_right:] = self.elem_stiffness[:self.n_elem_right] 
         self.elem_mass[self.n_elem_right:] = self.elem_mass[:self.n_elem_right]
-        # wing section
+        # wing might have different properties eventually
         self.elem_stiffness[self.n_elem_right + self.n_elem_body + 1:] = 2
         self.elem_mass[self.n_elem_right + self.n_elem_body + 1:] = 2
-
         self.beam_number[self.n_elem_right:] = 1        
         self.boundary_conditions[-1] = -1 # free tip
         self.conn[self.n_elem_right:, :] = self.conn[:self.n_elem_right, :] + self.n_node_right - 1
