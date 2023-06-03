@@ -59,14 +59,12 @@ class BFF_Aero:
                 inode = self.structure.conn[i_elem, i_local_node]
                 self.chord[i_elem, i_local_node], self.elastic_axis[i_elem, i_local_node] = self.get_chord_and_elastic_axis_body_node(inode)
 
-    def mirror_surface(self):
-        """
-            Mirrors the parameters from the right lifting surface for the left one.
-        """
-        self.elastic_axis[self.structure.n_elem_right:, :] = self.elastic_axis[:self.structure.n_elem_right, :]
-        self.chord[self.structure.n_elem_right:, :] = self.chord[:self.structure.n_elem_right, :]
-        self.surface_distribution[self.structure.n_elem_right:] += 1 
-    
+    def mirror_wing(self):
+        self.chord[self.structure.n_elem//2:] = self.chord[:self.structure.n_elem//2]
+        self.elastic_axis[self.structure.n_elem//2:] = self.elastic_axis[:self.structure.n_elem//2]
+        self.surface_distribution [self.structure.n_elem//2:] = 1
+        self.control_surface[self.structure.n_elem//2:, :] = self.control_surface[:self.structure.n_elem//2, :]
+
     def get_chord_and_elastic_axis_body_node(self, inode):
         """
             Calculates the chord and elastic of the lifting surface of the body at each structural node 
@@ -80,8 +78,22 @@ class BFF_Aero:
         chord =  self.structure.chord_mid_body - delta_x_LE - delta_x_TE
         elastic_axis = (abs(self.structure.x_nose) - delta_x_LE) / chord
         return chord, elastic_axis
-
     
+    def set_control_surfaces(self):
+        n_control_surfaces = 1
+        self.control_surface = np.zeros((self.structure.n_elem, self.structure.n_node_elem), dtype=int) - 1
+        self.control_surface_type = np.zeros((n_control_surfaces, ), dtype=int)
+        self.control_surface_deflection = np.zeros((n_control_surfaces, ))
+        self.control_surface_chord = np.zeros((n_control_surfaces, ), dtype=int)
+        self.control_surface_hinge_coord = np.zeros((n_control_surfaces, ), dtype=float)
+        spanwise_start_position_aileron = 0.8 * self.structure.halfspan_wing
+        for i_elem in range(self.structure.n_elem // 2):
+            inode = self.structure.conn[i_elem, 0]
+            if self.structure.y[inode] >= spanwise_start_position_aileron:
+                self.control_surface[i_elem,:] = 0
+        self.control_surface_chord[:] = self.m/4
+        self.control_surface_deflection[:] = 0
+
     def write_input_file(self):
         """
             Writes previously defined parameters to an .h5 file which serves later as an 
