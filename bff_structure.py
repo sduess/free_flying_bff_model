@@ -162,7 +162,7 @@ class BFF_Structure:
                                 [0, 2, 1])               
             for ilocalnode in range(self.n_node_elem):
                 self.frame_of_reference_delta[ielem, ilocalnode, :] = [-1.0, 0.0, 0.0]  
-            if ielem < self.n_elem_body:
+            if ielem > self.n_elem_body:
                 # wing and body properties differ
                 self.elem_stiffness[ielem] += 1
                 self.elem_mass[ielem] += 1
@@ -187,8 +187,8 @@ class BFF_Structure:
         self.elem_stiffness[self.n_elem_right:] = self.elem_stiffness[:self.n_elem_right] 
         self.elem_mass[self.n_elem_right:] = self.elem_mass[:self.n_elem_right]
         # wing section
-        self.elem_stiffness[self.n_elem_right + self.n_elem_body:] += 1
-        self.elem_mass[self.n_elem_right + self.n_elem_body:] += 1 
+        self.elem_stiffness[self.n_elem_right + self.n_elem_body + 1:] = 2
+        self.elem_mass[self.n_elem_right + self.n_elem_body + 1:] = 2
 
         self.beam_number[self.n_elem_right:] = 1        
         self.boundary_conditions[-1] = -1 # free tip
