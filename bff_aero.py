@@ -20,7 +20,6 @@ class BFF_Aero:
         self.case_name = case_name
 
         self.elastic_axis_wing = 0.5
-        self.elastic_axis_mid_body = abs(self.structure.x_nose / self.structure.chord_mid_body)
         
 
     def generate(self):
