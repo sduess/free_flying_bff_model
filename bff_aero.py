@@ -20,7 +20,7 @@ class BFF_Aero:
         self.case_name = case_name
 
         self.elastic_axis_wing = 0.5
-        self.elastic_axis_body_start = abs(self.structure.x_nose/self.structure.chord_mid_body)
+        self.elastic_axis_mid_body = abs(self.structure.x_nose / self.structure.chord_mid_body)
         
 
     def generate(self):
@@ -30,7 +30,8 @@ class BFF_Aero:
             file for SHARPy.
         """
         self.set_wing_properties()
-        self.mirror_surface()
+        self.set_control_surfaces()
+        self.mirror_wing()
         self.write_input_file()
 
     def set_wing_properties(self):
@@ -56,42 +57,43 @@ class BFF_Aero:
         for i_elem in range(self.structure.n_elem_body):
             for i_local_node in range(self.structure.n_node_elem):
                 inode = self.structure.conn[i_elem, i_local_node]
-                self.chord[i_elem, i_local_node], self.elastic_axis[i_elem, i_local_node] = self.get_chord_and_elastic_axis_of_body_node(inode)
+                self.chord[i_elem, i_local_node], self.elastic_axis[i_elem, i_local_node] = self.get_chord_and_elastic_axis_body_node(inode)
 
-    def mirror_surface(self):
-        """
-            Mirrors the parameters from the right lifting surface for the left one.
-        """
-        self.elastic_axis[self.structure.n_elem_right:, :] = self.elastic_axis[:self.structure.n_elem_right, :]
-        self.chord[self.structure.n_elem_right:, :] = self.chord[:self.structure.n_elem_right, :]
-        self.surface_distribution[self.structure.n_elem_right:] += 1 
-    
-    def get_chord_and_elastic_axis_of_body_node(self, inode): 
+    def mirror_wing(self):
+        self.chord[self.structure.n_elem//2:] = self.chord[:self.structure.n_elem//2]
+        self.elastic_axis[self.structure.n_elem//2:] = self.elastic_axis[:self.structure.n_elem//2]
+        self.surface_distribution [self.structure.n_elem//2:] = 1
+        self.control_surface[self.structure.n_elem//2:, :] = self.control_surface[:self.structure.n_elem//2, :]
+
+    def get_chord_and_elastic_axis_body_node(self, inode):
         """
             Calculates the chord and elastic of the lifting surface of the body at each structural node 
             based on defined geometry planform.
         """  
-        # get leading edge (LE) coordinate for inode     
-        if self.structure.y[inode] <= self.structure.halfspan_body/2:
-            delta_x_LE = self.structure.y[inode] * np.tan(self.structure.sweep_body_LE)
-            x_LE_0 = self.structure.x_nose
+        delta_x_TE = np.tan(self.structure.sweep_body_TE) * self.structure.y[inode]
+        if self.structure.y[inode] <= self.structure.halfspan_body / 2.:
+            delta_x_LE =  np.tan(self.structure.sweep_body_LE) * self.structure.y[inode]
         else:
-            delta_x_LE = (self.structure.y[inode] - self.structure.halfspan_body/2) * np.tan(self.structure.sweep_quarter_body_LE)
-            x_LE_0 =  self.structure.x_nose + self.structure.offset_nose_quarter_body_LE        
-        x_LE = x_LE_0 + delta_x_LE
-
-        # get trailing edge (TE) coordinate for inode        
-        x_TE_0 = self.structure.chord_mid_body * (1 - self.elastic_axis_body_start)
-        delta_x_TE = self.structure.y[inode] * np.tan(self.structure.sweep_body_TE)
-        x_TE = x_TE_0 - delta_x_TE
-        
-        # calculate resulting chord and elastic axis
-        chord = abs(x_LE - x_TE)
-        elastic_axis = abs(x_LE)/chord
-
+            delta_x_LE = self.structure.offset_nose_quarter_body_LE + np.tan(self.structure.sweep_quarter_body_LE) * (self.structure.y[inode] - self.structure.halfspan_body / 2.)
+        chord =  self.structure.chord_mid_body - delta_x_LE - delta_x_TE
+        elastic_axis = (abs(self.structure.x_nose) - delta_x_LE) / chord
         return chord, elastic_axis
-
     
+    def set_control_surfaces(self):
+        n_control_surfaces = 1
+        self.control_surface = np.zeros((self.structure.n_elem, self.structure.n_node_elem), dtype=int) - 1
+        self.control_surface_type = np.zeros((n_control_surfaces, ), dtype=int)
+        self.control_surface_deflection = np.zeros((n_control_surfaces, ))
+        self.control_surface_chord = np.zeros((n_control_surfaces, ), dtype=int)
+        self.control_surface_hinge_coord = np.zeros((n_control_surfaces, ), dtype=float)
+        spanwise_start_position_aileron = 0.8 * self.structure.halfspan_wing
+        for i_elem in range(self.structure.n_elem // 2):
+            inode = self.structure.conn[i_elem, 0]
+            if self.structure.y[inode] >= spanwise_start_position_aileron:
+                self.control_surface[i_elem,:] = 0
+        self.control_surface_chord[:] = self.m/4
+        self.control_surface_deflection[:] = 0
+
     def write_input_file(self):
         """
             Writes previously defined parameters to an .h5 file which serves later as an 
