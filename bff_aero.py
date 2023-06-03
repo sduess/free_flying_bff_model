@@ -106,17 +106,9 @@ class BFF_Aero:
                                             self.generate_naca_camber(P=0, M=0)
                                           ))
 
-            # chord
-            chord_input = h5file.create_dataset('chord', data=self.chord)
-            chord_input.attrs['units'] = 'm'
-
-            # twist
-            twist_input = h5file.create_dataset('twist', data=self.twist)
-            twist_input.attrs['units'] = 'rad'
-
-            # sweep
-            sweep_input = h5file.create_dataset('sweep', data=self.sweep)
-            sweep_input.attrs['units'] = 'rad'
+            h5file.create_dataset('chord', data=self.chord)
+            h5file.create_dataset('twist', data=self.twist)
+            h5file.create_dataset('sweep', data=self.sweep)
 
             # airfoil distribution
             h5file.create_dataset('airfoil_distribution', data=self.airfoil_distribution)
@@ -125,6 +117,11 @@ class BFF_Aero:
             h5file.create_dataset('m_distribution', data='uniform')
             h5file.create_dataset('aero_node', data=self.aero_node)
             h5file.create_dataset('elastic_axis', data=self.elastic_axis)
+            h5file.create_dataset('control_surface', data=self.control_surface)
+            h5file.create_dataset('control_surface_deflection', data=self.control_surface_deflection)
+            h5file.create_dataset('control_surface_chord', data=self.control_surface_chord)
+            h5file.create_dataset('control_surface_hinge_coord', data=self.control_surface_hinge_coord)
+            h5file.create_dataset('control_surface_type', data=self.control_surface_type)
    
 
     def generate_naca_camber(self,M=0, P=0):

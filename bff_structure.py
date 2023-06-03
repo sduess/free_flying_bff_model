@@ -243,15 +243,15 @@ class BFF_Structure:
         self.x[self.n_node_right:]  = self.x[1:self.n_node_right]
         self.y[self.n_node_right:]  = - self.y[1:self.n_node_right]
         self.frame_of_reference_delta[self.n_elem_right:, :, :] = self.frame_of_reference_delta[:self.n_elem_right, :, :] * (-1)
-        self.elem_stiffness[self.n_elem_right:] = self.elem_stiffness[:self.n_elem_right] 
+        self.elem_stiffness[self.n_elem_right:] = self.elem_stiffness[:self.n_elem_right]
         self.elem_mass[self.n_elem_right:] = self.elem_mass[:self.n_elem_right]
         # wing might have different properties eventually
         self.elem_stiffness[self.n_elem_right + self.n_elem_body + 1:] = 2
         self.elem_mass[self.n_elem_right + self.n_elem_body + 1:] = 2
-        self.beam_number[self.n_elem_right:] = 1        
+        self.beam_number[self.n_elem_right:] = 1
         self.boundary_conditions[-1] = -1 # free tip
         self.conn[self.n_elem_right:, :] = self.conn[:self.n_elem_right, :] + self.n_node_right - 1
-        self.conn[self.n_elem_right, 0] = 0 
+        self.conn[self.n_elem_right, 0] = 0
 
     def set_thrust(self, value):
         self.thrust = value
