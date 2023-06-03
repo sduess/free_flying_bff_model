@@ -30,19 +30,18 @@ class BFF_Structure:
         self.n_node_body = None
         self.n_node_wing = None
 
-        # Define geometry parameters
-        self.chord_wing = 0.0957 
-        self.chord_mid_body = 0.2743 
-        self.chord_quarter_body = 0.1446 
+        # TODO: store as aircraft information?
+        self.chord_wing = 0.0957 # m
+        self.chord_mid_body = 0.2743 # m
+        self.chord_quarter_body = 0.1446 # m
 
-        self.halfspan_wing = 0.3786 + 0.0607 * 2 
-        self.halfspan_body = 0.0607 * 2
-
-        self.x_nose = -0.17735
+        self.halfspan_wing = 0.3786 + 0.0607 * 2 # m
+        self.halfspan_body = 0.0607 * 2 #m
 
         self.offset_nose_quarter_body_LE = 0.1052
         self.offset_nose_wing_start_LE = 0.1295      
         self.x_offset_nose_tip_LE = 0.2673 
+        self.x_nose = -(self.chord_wing / 2. + self.offset_nose_wing_start_LE)
         self.set_sweep_angles()
 
     def generate(self):
@@ -52,19 +51,21 @@ class BFF_Structure:
             file for SHARPy.
         """
         self.set_element_and_nodes()
+
         self.set_stiffness_and_mass_propoerties()
         self.set_beam_properties()
-        # TODO: add lumped masses before mirror
-        self.mirror_beam()
-        
-        self.app_forces = np.zeros((self.n_node, 6))
 
+
+        self.set_lumped_masses()
+        self.mirror_beam()
+
+        self.app_forces = np.zeros((self.n_node, 6))        
+        self.app_forces[0] = [0, self.thrust, 0, 0, 0, 0]
         self.write_input_file()
 
+
+
     def set_element_and_nodes(self):
-        """
-            Function to set the number of nodes and elements of the discretised beam.
-        """
         self.n_elem_body =  2*int(2*self.n_elem_multiplier)
         self.n_elem_wing =  3*int(1 * self.n_elem_body)
         self.n_elem = 2 * (self.n_elem_body + self.n_elem_wing)
@@ -83,11 +84,12 @@ class BFF_Structure:
         # wing beam
         delta_y_tip = self.halfspan_wing - self.halfspan_body
         delta_x_tip = self.x_offset_nose_tip_LE - self.offset_nose_wing_start_LE
-
         self.sweep_wing = np.arctan(delta_x_tip / delta_y_tip)
-        # mid body LE
+
+        # body LE
         delta_x_mid_body_LE = self.offset_nose_quarter_body_LE 
         self.sweep_body_LE = np.arctan(delta_x_mid_body_LE / (self.halfspan_body/2))
+
         # body TE 
         delta_x_mid_body_TE = self.chord_mid_body - self.offset_nose_wing_start_LE - self.chord_wing
         self.sweep_body_TE = np.arctan(delta_x_mid_body_TE / self.halfspan_body)
