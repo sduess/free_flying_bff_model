@@ -21,6 +21,7 @@ class BFF_Aero:
 
         self.elastic_axis_wing = 0.5
         self.aileron_relative_spanwise_position = kwargs.get('aileron_relative_spanwise_position', [0.3, 0.6])
+        self.init_cs_deflection = kwargs.get('init_cs_deflection', 0.)
         
 
     def generate(self):
@@ -100,7 +101,7 @@ class BFF_Aero:
             elif self.structure.y[inode] >= spanwise_start_position_aileron:
                 self.control_surface[i_elem,:] = 0
         self.control_surface_chord[:] = self.m/4
-        self.control_surface_deflection[:] = 0
+        self.control_surface_deflection[:] = self.init_cs_deflection
 
     def write_input_file(self):
         """
