@@ -134,22 +134,17 @@ class BFF_Structure:
         self.elem_mass = np.zeros((self.n_elem, ), dtype=int)
         
         # TODO: add inertia to (mass???)
-        ea = 1e7
-        ga = 1e5 
-        gj = 1e4
-        eiy = 1e4 
-        eiz = eiy
-        # gj = 0.06 # Torsional stiffness
-        # ga = gj * 20 # Shear stiffness in the local y axis
-        # eiy = 0.18 # Bending stiffness around the flapwise direction
-        # eiz = 0.18 # Bending stiffness around the edgewise direction
-        # ea = eiy * 1e4 # Axial stiffness
+        ea = 10 # # Axial stiffness
+        ga = 0.6 * 1000 #  Shear stiffness in the local y axis
+        gj = 0.06  # Torsional stiffness
+        eiy = 0.18 # Bending stiffness around the flapwise direction
+        eiz = eiy * 100 #eiy * 10 # Bending stiffness around the edgewise direction
         m_bar_main = 0.069 
         j_bar_main = m_bar_main / 10.
-        base_stiffness = self.sigma * np.diag([ea, ga, ga, gj, eiy, eiz]) / 1e4
+        base_stiffness = self.sigma * np.diag([ea, ga, ga, gj, eiy, eiz]) #/ 1e4
         base_mass = np.diag([m_bar_main, m_bar_main, m_bar_main, j_bar_main, 0.5 * j_bar_main, 0.5 * j_bar_main])
 
-        sigma_main_body = 100
+        sigma_main_body = 10
 
         # Stiffness and mass properties
         self.stiffness[0, ...] = base_stiffness * sigma_main_body
