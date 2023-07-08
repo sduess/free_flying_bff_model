@@ -20,6 +20,8 @@ class BFF_Aero:
         self.case_name = case_name
 
         self.elastic_axis_wing = 0.5
+        self.aileron_relative_spanwise_position = kwargs.get('aileron_relative_spanwise_position', [0.3, 0.6])
+        self.init_cs_deflection = kwargs.get('init_cs_deflection', 0.)
         
 
     def generate(self):
@@ -79,19 +81,27 @@ class BFF_Aero:
         return chord, elastic_axis
     
     def set_control_surfaces(self):
+        """
+            Creates a control surface at the wing's trailing edge for trimming 
+            purposes.
+        """
         n_control_surfaces = 1
         self.control_surface = np.zeros((self.structure.n_elem, self.structure.n_node_elem), dtype=int) - 1
         self.control_surface_type = np.zeros((n_control_surfaces, ), dtype=int)
         self.control_surface_deflection = np.zeros((n_control_surfaces, ))
         self.control_surface_chord = np.zeros((n_control_surfaces, ), dtype=int)
         self.control_surface_hinge_coord = np.zeros((n_control_surfaces, ), dtype=float)
-        spanwise_start_position_aileron = 0.8 * self.structure.halfspan_wing
+        spanwise_start_position_aileron = self.aileron_relative_spanwise_position[0] * self.structure.halfspan_wing
+        spanwise_end_position_aileron = self.aileron_relative_spanwise_position[1] * self.structure.halfspan_wing
         for i_elem in range(self.structure.n_elem // 2):
             inode = self.structure.conn[i_elem, 0]
-            if self.structure.y[inode] >= spanwise_start_position_aileron:
+            if self.structure.y[inode] > spanwise_end_position_aileron:
+                self.control_surface[i_elem,:] = -1
+                break
+            elif self.structure.y[inode] >= spanwise_start_position_aileron:
                 self.control_surface[i_elem,:] = 0
         self.control_surface_chord[:] = self.m/4
-        self.control_surface_deflection[:] = 0
+        self.control_surface_deflection[:] = self.init_cs_deflection
 
     def write_input_file(self):
         """
