@@ -19,7 +19,7 @@ class BFF_Flying_Wing:
 
     def init_aeroelastic(self, **kwargs):
         self.clean()
-        self.init_structure()
+        self.init_structure(**kwargs)
         self.init_aero(**kwargs)
 
     def init_structure(self, **kwargs):
